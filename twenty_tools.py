@@ -3,15 +3,43 @@ Helpers for loading 20NG dataset and plotting the clustering results.
 """
 import logging
 
-from sklearn.datasets import fetch_20newsgroups
+from sklearn.datasets import fetch_20newsgroups, load_digits
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-import numpy.random as nr
 
 
 logger = logging.getLogger(__name__)
+
+
+
+class Mnist(object):
+    def __init__(self, n_classes, feat_std_min):
+        self.dataset = self._get_dataset(n_classes, feat_std_min)
+
+    def _get_dataset(self, n_classes, feat_std_min):
+        dataset = load_digits()
+        n_samples = len(dataset.images)
+        X_count = dataset.images.reshape((n_samples, -1))
+
+        keep_samples = np.where(dataset.target < n_classes)
+        logger.info("keep_samples=%s/%s", len(keep_samples[0]), len(X_count))
+        X_count = X_count[keep_samples]
+        y = dataset.target[keep_samples]
+
+        keep_feat = np.where(X_count.std(axis=0) > feat_std_min)
+        logger.info("keep_feat=%s/%s", len(keep_feat[0]), len(X_count.T))
+        X_count = X_count.T[keep_feat].T
+
+        logger.info("X=%s, mean=%s", X_count.shape, X_count.mean())
+        logger.info("y=%s", np.bincount(y))
+        return {
+            'X_count': X_count,
+            'X_bin': np.array(X_count > 0, int),
+            'y': y,
+            'target_names': [str(c) for c in range(n_classes)]
+        }
 
 
 class TwentyNewsGroups(object):
