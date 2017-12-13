@@ -33,6 +33,37 @@ def get_beta_bernoulli_mixture(X, params):
     return model
 
 
+def get_beta_bernoulli_dpmixture(X, params):
+    n_doc, n_feat = X.shape
+    n_comp = params['n_comp']
+
+    with pm.Model() as model:
+        # sample P ~ DP(G0)
+        alpha = pm.Gamma('alpha',
+                         1.,
+                         1.)
+        beta = pm.Beta('beta',
+                       1.,
+                       alpha,
+                       shape=n_comp)
+        p_comp = pm.Deterministic(
+            'p_comp',
+            beta * tt.concatenate([[1], tt.extra_ops.cumprod(1 - beta)[:-1]]))
+        pkw = pm.Beta('pkw',
+                      alpha=params['pkw_beta_dist']['alpha'],
+                      beta=params['pkw_beta_dist']['beta'],
+                      shape=(n_comp, n_feat))
+        # sample X ~ P
+        z = pm.Categorical('z',
+                           p=p_comp,
+                           shape=n_doc)
+        x = pm.Bernoulli('x',
+                         p=pkw[z],
+                         shape=(n_doc, n_feat),
+                         observed=X)
+    return model
+
+
 def get_logisticnormal_bernoulli_mixture(X, params):
     n_doc, n_feat = X.shape
     n_comp = params['n_comp']
@@ -90,6 +121,7 @@ def debug():
     }
     return {
         'bbm': get_beta_bernoulli_mixture(X_bin, params),
+        'bbd': get_beta_bernoulli_dpmixture(X_bin, params),
         'lbm': get_logisticnormal_bernoulli_mixture(X_bin, params),
         'dmm': get_dirichlet_multinomial_mixture(X_count, params)
     }
