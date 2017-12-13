@@ -107,6 +107,36 @@ def get_dirichlet_multinomial_mixture(X, params):
     return model
 
 
+def get_dirichlet_multinomial_dpmixture(X, params):
+    n_doc, n_feat = X.shape
+    n_comp = params['n_comp']
+
+    with pm.Model() as model:
+        # sample P ~ DP(G0)
+        alpha = pm.Gamma('alpha',
+                         1.,
+                         1.)
+        beta = pm.Beta('beta',
+                       1.,
+                       alpha,
+                       shape=n_comp)
+        p_comp = pm.Deterministic(
+            'p_comp',
+            beta * tt.concatenate([[1], tt.extra_ops.cumprod(1 - beta)[:-1]]))
+        pkw = pm.Dirichlet('pkw',
+                           a=params['pkw_dirichlet_dist']['alpha'] * np.ones(n_feat),
+                           shape=(n_comp, n_feat))
+        # sample X ~ P
+        z = pm.Categorical('z',
+                           p=p_comp,
+                           shape=n_doc)
+        x = pm.Multinomial('x',
+                           n=X.sum(axis=1),
+                           p=pkw[z],
+                           observed=X)
+    return model
+
+
 def debug():
     n_doc, n_feat, n_comp = 10, 5, 2
     X_count = nr.randint(0, 10, (n_doc, n_feat))
@@ -123,5 +153,6 @@ def debug():
         'bbm': get_beta_bernoulli_mixture(X_bin, params),
         'bbd': get_beta_bernoulli_dpmixture(X_bin, params),
         'lbm': get_logisticnormal_bernoulli_mixture(X_bin, params),
-        'dmm': get_dirichlet_multinomial_mixture(X_count, params)
+        'dmm': get_dirichlet_multinomial_mixture(X_count, params),
+        'dmd': get_dirichlet_multinomial_dpmixture(X_count, params)
     }
