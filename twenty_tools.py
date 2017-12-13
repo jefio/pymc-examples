@@ -1,5 +1,5 @@
 """
-Helpers for loading 20NG dataset and plotting the clustering results.
+Datasets.
 """
 import logging
 
@@ -13,8 +13,35 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 
+class DatasetBase(object):
+    def plot_clustering(self, pred_clusters, filename):
+        pxt_mat = self._get_pxt_mat(pred_clusters)
+        df = pd.DataFrame(pxt_mat, columns=self.dataset['target_names'])
+        df.plot.bar(stacked=True)
+        plt.xlabel('Cluster ID')
+        plt.ylabel('Nb of documents')
+        plt.title('Clusters composition')
+        plt.savefig(filename)
+        plt.close()
 
-class Mnist(object):
+    def _get_pxt_mat(self, pred_clusters):
+        n_classes = len(self.dataset['target_names'])
+        n_pred_clusters = len(set(pred_clusters))
+        pxt_mat = np.zeros((n_pred_clusters, n_classes), int)
+        for cdx in range(n_pred_clusters):
+            idxs, = np.where(pred_clusters == cdx)
+            counts = np.bincount(self.dataset['y'][idxs])
+            pxt_mat[cdx][:len(counts)] = counts
+
+        # plot clusters ordered by size
+        cdxs = np.argsort(pxt_mat.sum(axis=1))[::-1]
+        pxt_mat = pxt_mat[cdxs]
+        logger.debug("pxt_mat=%s", pxt_mat)
+
+        return pxt_mat
+
+
+class Mnist(DatasetBase):
     def __init__(self, n_classes, feat_std_min):
         self.dataset = self._get_dataset(n_classes, feat_std_min)
 
