@@ -137,6 +137,16 @@ def get_dirichlet_multinomial_dpmixture(X, params):
     return model
 
 
+def get_models(X_count, X_bin, params):
+    return {
+        'bbm': get_beta_bernoulli_mixture(X_bin, params),
+        'bbd': get_beta_bernoulli_dpmixture(X_bin, params),
+        'lbm': get_logisticnormal_bernoulli_mixture(X_bin, params),
+        'dmm': get_dirichlet_multinomial_mixture(X_count, params),
+        'dmd': get_dirichlet_multinomial_dpmixture(X_count, params)
+    }
+
+
 def debug():
     n_doc, n_feat, n_comp = 10, 5, 2
     X_count = nr.randint(0, 10, (n_doc, n_feat))
@@ -149,10 +159,4 @@ def debug():
         # Dirichlet-Multinomial
         'pkw_dirichlet_dist': {'alpha': 2}
     }
-    return {
-        'bbm': get_beta_bernoulli_mixture(X_bin, params),
-        'bbd': get_beta_bernoulli_dpmixture(X_bin, params),
-        'lbm': get_logisticnormal_bernoulli_mixture(X_bin, params),
-        'dmm': get_dirichlet_multinomial_mixture(X_count, params),
-        'dmd': get_dirichlet_multinomial_dpmixture(X_count, params)
-    }
+    return get_models(X_count, X_bin, params)
