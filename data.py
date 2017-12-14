@@ -2,6 +2,7 @@
 Datasets.
 """
 import logging
+import os
 
 from sklearn.datasets import fetch_20newsgroups, load_digits
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
@@ -16,7 +17,7 @@ logger = logging.getLogger(__name__)
 class DatasetBase(object):
     def plot_clustering(self, pred_clusters, filename):
         pxt_mat = self._get_pxt_mat(pred_clusters)
-        df = pd.DataFrame(pxt_mat, columns=self.dataset['target_names'])
+        df = pd.DataFrame(pxt_mat, columns=self.target_names)
         df.plot.bar(stacked=True)
         plt.xlabel('Cluster ID')
         plt.ylabel('Nb of documents')
@@ -25,12 +26,12 @@ class DatasetBase(object):
         plt.close()
 
     def _get_pxt_mat(self, pred_clusters):
-        n_classes = len(self.dataset['target_names'])
+        n_classes = len(self.target_names)
         n_pred_clusters = len(set(pred_clusters))
         pxt_mat = np.zeros((n_pred_clusters, n_classes), int)
         for cdx in range(n_pred_clusters):
             idxs, = np.where(pred_clusters == cdx)
-            counts = np.bincount(self.dataset['y'][idxs])
+            counts = np.bincount(self.y[idxs])
             pxt_mat[cdx][:len(counts)] = counts
 
         # plot clusters ordered by size
@@ -43,7 +44,11 @@ class DatasetBase(object):
 
 class Mnist(DatasetBase):
     def __init__(self, n_classes, feat_std_min):
-        self.dataset = self._get_dataset(n_classes, feat_std_min)
+        dataset = self._get_dataset(n_classes, feat_std_min)
+        self.X_count = dataset['X_count']
+        self.X_bin = dataset['X_bin']
+        self.y = dataset['y']
+        self.target_names = dataset['target_names']
 
     def _get_dataset(self, n_classes, feat_std_min):
         dataset = load_digits()
@@ -67,6 +72,11 @@ class Mnist(DatasetBase):
             'y': y,
             'target_names': [str(c) for c in range(n_classes)]
         }
+
+    def evaluate_clusters(self, pred_clusters, exp_name):
+        filename = os.path.expanduser("~/plot/mnist_{}_clusters.png".format(
+            exp_name))
+        self.plot_clustering(pred_clusters, filename)
 
 
 class TwentyNewsGroups(DatasetBase):
@@ -114,3 +124,8 @@ class TwentyNewsGroups(DatasetBase):
             for top_terms in self._get_words(pred_clusters):
                 line = ','.join(top_terms)
                 fwrite.write(line + '\n')
+
+    def evaluate_clusters(self, pred_clusters, exp_name):
+        filename = os.path.expanduser("~/plot/20ng_{}_clusters.png".format(
+            exp_name))
+        self.plot_clustering(pred_clusters, filename)
