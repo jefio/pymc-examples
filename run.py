@@ -1,43 +1,33 @@
 """
-Fit models and plot the results.
+Run multiple models on the Mnist data.
 """
 import argparse
 import logging
-from os.path import expanduser
+import os
+import json
 
 import numpy as np
 import pymc3 as pm
 
-from models import get_bernoulli_mixture
-from twenty_tools import TwentyNewsGroups
+import models
+import data
 
 
 logger = logging.getLogger(__name__)
 
 
-def _get_pred_clusters(trace):
-    pred_clusters = [np.argmax(np.bincount(zi)) for zi in trace.T]
+def get_pred_clusters(model, samples, njobs):
+    with model:
+        trace = pm.sample(samples, njobs=njobs)
+    pred_clusters = [np.argmax(np.bincount(zi)) for zi in trace['z'].T]
     return np.array(pred_clusters, int)
 
 
-class FitPlot(object):
-    def __init__(self, data_params, model_params, trace_params, exp_name):
-        self.trace_params = trace_params
-        self.exp_name = exp_name
-
-        self.tng = TwentyNewsGroups(data_params['max_df'], data_params['min_df'],
-                                    data_params['doc_len_min'], data_params['doc_len_max'])
-        self.model = get_bernoulli_mixture(self.tng.dataset['X_bin'], model_params)
-
-    def fit_plot(self):
-        with self.model:
-            trace = pm.sample(self.trace_params['samples'], njobs=self.trace_params['njobs'])
-        pred_clusters = _get_pred_clusters(trace['z'])
-        logger.info("pred_clusters=%s", np.bincount(pred_clusters))
-        filename = expanduser("~/plot/{}_clusters.png".format(self.exp_name))
-        self.tng.plot_clustering(pred_clusters, filename)
-        filename = expanduser("~/plot/{}_words.csv".format(self.exp_name))
-        self.tng.write_words(pred_clusters, filename)
+def save_config(config, exp_name):
+    filename = os.path.expanduser("~/plot/mnist_{}_config.json".format(
+        exp_name))
+    with open(filename, 'w') as fwrite:
+        json.dump(config, fwrite)
 
 
 def main():
