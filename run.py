@@ -31,46 +31,46 @@ def save_config(config, exp_name):
 
 
 def main():
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
 
     parser = argparse.ArgumentParser()
     # data
-    parser.add_argument('--max-df', type=float, default=0.5)
-    parser.add_argument('--min-df', type=int, default=50)
-    parser.add_argument('--doc-len-min', type=int, default=20)
-    parser.add_argument('--doc-len-max', type=int, default=40)
+    parser.add_argument('--n-classes', type=int, default=10)
+    parser.add_argument('--feat-std-min', type=float, default=0.1)
     # model
     parser.add_argument('--n-comp', type=int, default=10)
-    parser.add_argument('--beta-dist-alpha', type=float, default=2)
-    parser.add_argument('--beta-dist-beta', type=float, default=100)
-    parser.add_argument('--dirichlet-dist-alpha', type=float, default=1)
+    parser.add_argument('--pcomp-dirichlet-dist-alpha', type=float, default=2)
+    parser.add_argument('--pkw-beta-dist-alpha', type=float, default=2)
+    parser.add_argument('--pkw-beta-dist-beta', type=float, default=2)
+    parser.add_argument('--pkw-dirichlet-dist-alpha', type=float, default=2)
     # trace
-    parser.add_argument('--samples', type=int, default=1000)
+    parser.add_argument('--samples', type=int, default=500)
     parser.add_argument('--njobs', type=int, default=1)
     # other
     parser.add_argument('--exp-name', type=str, default='A')
     args = parser.parse_args()
     logger.info("args=%s", args)
 
-    data_params = {
-        key: getattr(args, key) for key in ('max_df', 'min_df', 'doc_len_min', 'doc_len_max')
-    }
+    save_config(vars(args), args.exp_name)
+    dataset = data.Mnist(args.n_classes, args.feat_std_min)
     model_params = {
         'n_comp': args.n_comp,
-        'beta_dist': {
-            'alpha': args.beta_dist_alpha,
-            'beta': args.beta_dist_beta
+        'pcomp_dirichlet_dist': {
+            'alpha': args.pcomp_dirichlet_dist_alpha
         },
-        'dirichlet_dist': {
-            'alpha': args.dirichlet_dist_alpha
+        'pkw_beta_dist': {
+            'alpha': args.pkw_beta_dist_alpha,
+            'beta': args.pkw_beta_dist_beta
+        },
+        'pkw_dirichlet_dist': {
+            'alpha': args.pkw_dirichlet_dist_alpha
         }
     }
-    trace_params = {
-        key: getattr(args, key) for key in ('samples', 'njobs')
-    }
-    exp_name = args.exp_name
-    fplot = FitPlot(data_params, model_params, trace_params, exp_name)
-    fplot.fit_plot()
+    for model_name, model in models.get_models(
+            dataset.X_count, dataset.X_bin, model_params).items():
+        exp_name = "{}_{}".format(args.exp_name, model_name)
+        pred_clusters = get_pred_clusters(model, args.samples, args.njobs)
+        dataset.evaluate_clusters(pred_clusters, exp_name)
 
 
 if __name__ == '__main__':
