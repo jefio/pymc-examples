@@ -41,6 +41,7 @@ def main():
     parser.add_argument('--model-names', type=str, nargs='+')
     parser.add_argument('--n-comp', type=int, default=10)
     parser.add_argument('--n-trunc', type=int, default=30)
+    parser.add_argument('--dp-alpha', type=float, default=1)
     parser.add_argument('--pcomp-dirichlet-dist-alpha', type=float, default=1)
     parser.add_argument('--pkw-beta-dist-alpha', type=float, default=1)
     parser.add_argument('--pkw-beta-dist-beta', type=float, default=1)
