@@ -38,11 +38,13 @@ def main():
     parser.add_argument('--n-classes', type=int, default=10)
     parser.add_argument('--feat-std-min', type=float, default=0.1)
     # model
+    parser.add_argument('--model-names', type=str, nargs='+')
     parser.add_argument('--n-comp', type=int, default=10)
-    parser.add_argument('--pcomp-dirichlet-dist-alpha', type=float, default=2)
-    parser.add_argument('--pkw-beta-dist-alpha', type=float, default=2)
-    parser.add_argument('--pkw-beta-dist-beta', type=float, default=2)
-    parser.add_argument('--pkw-dirichlet-dist-alpha', type=float, default=2)
+    parser.add_argument('--n-trunc', type=int, default=30)
+    parser.add_argument('--pcomp-dirichlet-dist-alpha', type=float, default=1)
+    parser.add_argument('--pkw-beta-dist-alpha', type=float, default=1)
+    parser.add_argument('--pkw-beta-dist-beta', type=float, default=1)
+    parser.add_argument('--pkw-dirichlet-dist-alpha', type=float, default=1)
     # trace
     parser.add_argument('--samples', type=int, default=500)
     parser.add_argument('--njobs', type=int, default=1)
