@@ -39,12 +39,9 @@ def get_beta_bernoulli_dpmixture(X, params):
 
     with pm.Model() as model:
         # sample P ~ DP(G0)
-        alpha = pm.Gamma('alpha',
-                         1.,
-                         1.)
         beta = pm.Beta('beta',
                        1.,
-                       alpha,
+                       params['dp_alpha'],
                        shape=n_comp)
         p_comp = pm.Deterministic(
             'p_comp',
@@ -113,12 +110,9 @@ def get_dirichlet_multinomial_dpmixture(X, params):
 
     with pm.Model() as model:
         # sample P ~ DP(G0)
-        alpha = pm.Gamma('alpha',
-                         1.,
-                         1.)
         beta = pm.Beta('beta',
                        1.,
-                       alpha,
+                       params['dp_alpha'],
                        shape=n_comp)
         p_comp = pm.Deterministic(
             'p_comp',
