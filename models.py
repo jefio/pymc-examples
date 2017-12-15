@@ -132,13 +132,20 @@ def get_dirichlet_multinomial_dpmixture(X, params):
 
 
 def get_models(X_count, X_bin, params):
-    return {
-        'bbm': get_beta_bernoulli_mixture(X_bin, params),
-        'bbd': get_beta_bernoulli_dpmixture(X_bin, params),
-        'lbm': get_logisticnormal_bernoulli_mixture(X_bin, params),
-        'dmm': get_dirichlet_multinomial_mixture(X_count, params),
-        'dmd': get_dirichlet_multinomial_dpmixture(X_count, params)
-    }
+    bin_funcs = [
+        get_beta_bernoulli_mixture,
+        get_beta_bernoulli_dpmixture,
+        get_logisticnormal_bernoulli_mixture
+    ]
+    count_funcs = [
+        get_dirichlet_multinomial_mixture,
+        get_dirichlet_multinomial_dpmixture
+    ]
+    models = {func.__name__[4:]: func(X_bin, params)
+              for func in bin_funcs}
+    models.update({func.__name__[4:]: func(X_count, params)
+                   for func in count_funcs})
+    return models
 
 
 def debug():
