@@ -27,10 +27,10 @@ class DatasetBase(object):
 
     def _get_pxt_mat(self, pred_clusters):
         n_classes = len(self.target_names)
-        n_pred_clusters = len(set(pred_clusters))
-        pxt_mat = np.zeros((n_pred_clusters, n_classes), int)
-        for cdx in range(n_pred_clusters):
-            idxs, = np.where(pred_clusters == cdx)
+        cluster_ids = set(pred_clusters)
+        pxt_mat = np.zeros((len(cluster_ids), n_classes), int)
+        for cdx, cluster_id in enumerate(cluster_ids):
+            idxs, = np.where(pred_clusters == cluster_id)
             counts = np.bincount(self.y[idxs])
             pxt_mat[cdx][:len(counts)] = counts
 
@@ -38,7 +38,7 @@ class DatasetBase(object):
         cdxs = np.argsort(pxt_mat.sum(axis=1))[::-1]
         pxt_mat = pxt_mat[cdxs]
         logger.debug("pxt_mat=%s", pxt_mat)
-
+        assert pxt_mat.sum() == len(pred_clusters)
         return pxt_mat
 
 
