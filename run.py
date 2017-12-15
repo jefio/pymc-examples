@@ -55,24 +55,12 @@ def main():
 
     save_config(vars(args), args.exp_name)
     dataset = data.Mnist(args.n_classes, args.feat_std_min)
-    model_params = {
-        'n_comp': args.n_comp,
-        'pcomp_dirichlet_dist': {
-            'alpha': args.pcomp_dirichlet_dist_alpha
-        },
-        'pkw_beta_dist': {
-            'alpha': args.pkw_beta_dist_alpha,
-            'beta': args.pkw_beta_dist_beta
-        },
-        'pkw_dirichlet_dist': {
-            'alpha': args.pkw_dirichlet_dist_alpha
-        }
-    }
     for model_name, model in models.get_models(
-            dataset.X_count, dataset.X_bin, model_params).items():
-        exp_name = "{}_{}".format(args.exp_name, model_name)
-        pred_clusters = get_pred_clusters(model, args.samples, args.njobs)
-        dataset.evaluate_clusters(pred_clusters, exp_name)
+            dataset.X_count, dataset.X_bin, vars(args)).items():
+        if args.model_names is None or model_name in args.model_names:
+            exp_name = "{}_{}".format(args.exp_name, model_name)
+            pred_clusters = get_pred_clusters(model, args.samples, args.njobs)
+            dataset.evaluate_clusters(pred_clusters, exp_name)
 
 
 if __name__ == '__main__':
