@@ -18,11 +18,11 @@ def get_beta_bernoulli_mixture(X, params):
 
     with pm.Model() as model:
         pkw = pm.Beta('pkw',
-                      alpha=params['pkw_beta_dist']['alpha'],
-                      beta=params['pkw_beta_dist']['beta'],
+                      alpha=params['pkw_beta_dist_alpha'],
+                      beta=params['pkw_beta_dist_beta'],
                       shape=(n_comp, n_feat))
         p_comp = pm.Dirichlet('p_comp',
-                              a=params['pcomp_dirichlet_dist']['alpha'] * np.ones(n_comp))
+                              a=params['pcomp_dirichlet_dist_alpha'] * np.ones(n_comp))
         z = pm.Categorical('z',
                            p=p_comp,
                            shape=n_doc)
@@ -35,7 +35,7 @@ def get_beta_bernoulli_mixture(X, params):
 
 def get_beta_bernoulli_dpmixture(X, params):
     n_doc, n_feat = X.shape
-    n_comp = params['n_comp']
+    n_comp = params['n_trunc']
 
     with pm.Model() as model:
         # sample P ~ DP(G0)
@@ -50,8 +50,8 @@ def get_beta_bernoulli_dpmixture(X, params):
             'p_comp',
             beta * tt.concatenate([[1], tt.extra_ops.cumprod(1 - beta)[:-1]]))
         pkw = pm.Beta('pkw',
-                      alpha=params['pkw_beta_dist']['alpha'],
-                      beta=params['pkw_beta_dist']['beta'],
+                      alpha=params['pkw_beta_dist_alpha'],
+                      beta=params['pkw_beta_dist_beta'],
                       shape=(n_comp, n_feat))
         # sample X ~ P
         z = pm.Categorical('z',
@@ -76,7 +76,7 @@ def get_logisticnormal_bernoulli_mixture(X, params):
         pkw = pm.Deterministic('pkw',
                                1 / (1 + tt.exp(-theta)))
         p_comp = pm.Dirichlet('p_comp',
-                              a=params['pcomp_dirichlet_dist']['alpha'] * np.ones(n_comp))
+                              a=params['pcomp_dirichlet_dist_alpha'] * np.ones(n_comp))
         z = pm.Categorical('z',
                            p=p_comp,
                            shape=n_doc)
@@ -93,10 +93,10 @@ def get_dirichlet_multinomial_mixture(X, params):
 
     with pm.Model() as model:
         pkw = pm.Dirichlet('pkw',
-                           a=params['pkw_dirichlet_dist']['alpha'] * np.ones(n_feat),
+                           a=params['pkw_dirichlet_dist_alpha'] * np.ones(n_feat),
                            shape=(n_comp, n_feat))
         p_comp = pm.Dirichlet('p_comp',
-                              a=params['pcomp_dirichlet_dist']['alpha'] * np.ones(n_comp))
+                              a=params['pcomp_dirichlet_dist_alpha'] * np.ones(n_comp))
         z = pm.Categorical('z',
                            p=p_comp,
                            shape=n_doc)
@@ -109,7 +109,7 @@ def get_dirichlet_multinomial_mixture(X, params):
 
 def get_dirichlet_multinomial_dpmixture(X, params):
     n_doc, n_feat = X.shape
-    n_comp = params['n_comp']
+    n_comp = params['n_trunc']
 
     with pm.Model() as model:
         # sample P ~ DP(G0)
@@ -124,7 +124,7 @@ def get_dirichlet_multinomial_dpmixture(X, params):
             'p_comp',
             beta * tt.concatenate([[1], tt.extra_ops.cumprod(1 - beta)[:-1]]))
         pkw = pm.Dirichlet('pkw',
-                           a=params['pkw_dirichlet_dist']['alpha'] * np.ones(n_feat),
+                           a=params['pkw_dirichlet_dist_alpha'] * np.ones(n_feat),
                            shape=(n_comp, n_feat))
         # sample X ~ P
         z = pm.Categorical('z',
