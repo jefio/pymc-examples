@@ -3,12 +3,16 @@ Datasets.
 """
 import logging
 import os
+from collections import Counter
 
 from sklearn.datasets import fetch_20newsgroups, load_digits
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
+from sklearn.feature_extraction.stop_words import ENGLISH_STOP_WORDS
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+from nltk.stem.porter import PorterStemmer
+from scipy.stats import describe
 
 
 logger = logging.getLogger(__name__)
@@ -80,8 +84,14 @@ class Mnist(DatasetBase):
 
 
 class TwentyNewsGroups(DatasetBase):
-    def __init__(self, max_df, min_df, doc_len_min, dlen_max):
-        self.dataset = self._get_dataset(max_df, min_df, doc_len_min, dlen_max)
+    def __init__(self, max_df, min_df, doc_len_min, doc_len_max, classes):
+        dataset = self._get_dataset(max_df, min_df, doc_len_min, doc_len_max, classes)
+        self.X_tfidf = dataset['X_tfidf']
+        self.X_count = dataset['X_count']
+        self.X_bin = dataset['X_bin']
+        self.y = dataset['y']
+        self.target_names = dataset['target_names']
+        self.terms = dataset['terms']
 
     def _get_dataset(self, max_df, min_df, doc_len_min, doc_len_max):
         categories = ['alt.atheism', 'talk.religion.misc',
