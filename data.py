@@ -135,22 +135,28 @@ class TwentyNewsGroups(DatasetBase):
         return record
 
     def _get_words(self, pred_clusters):
-        n_pred_clusters = len(set(pred_clusters))
-        pred_clusters = np.arange(len(pred_clusters)) % n_pred_clusters
-        for cdx in range(n_pred_clusters):
-            idxs, = np.where(pred_clusters == cdx)
-            xis = self.dataset['X_tfidf'][idxs]
-            fdxs = np.argsort(xis.max(axis=0))[-20:]
-            top_terms = [self.dataset['terms'][fdx] for fdx in fdxs]
-            yield top_terms
+        cluster_to_count = Counter(pred_clusters)
+        logger.info("cluster_to_count=%s", cluster_to_count)
+        for cluster_id, count in cluster_to_count.most_common():
+            idxs, = np.where(pred_clusters == cluster_id)
+            xis = self.X_tfidf[idxs]
+            fdxs = np.argsort(xis.mean(axis=0))[-20:]
+            top_terms = [self.terms[fdx] for fdx in fdxs]
+            yield {
+                'top_terms': top_terms,
+                'cluster_size': count
+            }
 
-    def write_words(self, pred_clusters, filename):
+    def write_topics(self, pred_clusters, filename):
         with open(filename, 'w') as fwrite:
-            for top_terms in self._get_words(pred_clusters):
-                line = ','.join(top_terms)
+            for record in self._get_words(pred_clusters):
+                line = ','.join([str(record['cluster_size'])] + record['top_terms'])
                 fwrite.write(line + '\n')
 
     def evaluate_clusters(self, pred_clusters, exp_name):
         filename = os.path.expanduser("~/plot/20ng_{}_clusters.png".format(
             exp_name))
         self.plot_clustering(pred_clusters, filename)
+        filename = os.path.expanduser("~/plot/20ng_{}_topics.csv".format(
+            exp_name))
+        self.write_topics(pred_clusters, filename)
