@@ -93,23 +93,38 @@ class TwentyNewsGroups(DatasetBase):
         self.target_names = dataset['target_names']
         self.terms = dataset['terms']
 
-    def _get_dataset(self, max_df, min_df, doc_len_min, doc_len_max):
+    def _get_dataset(self, max_df, min_df, doc_len_min, doc_len_max, classes):
         categories = ['alt.atheism', 'talk.religion.misc',
-                    'comp.graphics', 'sci.space']
+                      'comp.graphics', 'sci.space']
+        categories = [categories[idx] for idx in classes]
         dataset = fetch_20newsgroups(subset='all', categories=categories,
-                                    remove=('headers', 'footers', 'quotes'))
+                                     remove=('headers', 'footers', 'quotes'))
+
+        # https://stackoverflow.com/questions/36182502/add-stemming-support-to-countvectorizer-sklearn
+        stemmer = PorterStemmer()
+        analyzer = TfidfVectorizer().build_analyzer()
+        def stemmed_words(doc):
+            return (stemmer.stem(w) for w in analyzer(doc)
+                    if w not in ENGLISH_STOP_WORDS)
 
         # filter terms
-        tvec = TfidfVectorizer(max_df=max_df, min_df=min_df, stop_words='english')
+        tvec = TfidfVectorizer(max_df=max_df, min_df=min_df, analyzer=stemmed_words)
         X_tfidf = tvec.fit_transform(dataset.data).toarray()
         terms = tvec.get_feature_names()
         logger.debug("terms=%s", terms)
 
-        X_bin = np.array(X_tfidf > 0, int)
+        X_count = CountVectorizer(vocabulary=terms, analyzer=stemmed_words).fit_transform(
+            dataset.data).toarray()
+        X_bin = np.array(X_count > 0, int)
+        assert X_tfidf.shape == X_count.shape == X_bin.shape
         doc_lengths = X_bin.sum(axis=1)
+        logger.info("doc_lengths=%s", describe(doc_lengths))
         keep = (doc_lengths >= doc_len_min) & (doc_lengths <= doc_len_max)
+        feat_lengths = X_bin[keep].sum(axis=0)
+        logger.info("feat_lengths=%s", describe(feat_lengths))
         record = {
             'X_bin': X_bin[keep],
+            'X_count': X_count[keep],
             'X_tfidf': X_tfidf[keep],
             'y': dataset.target[keep],
             'target_names': dataset.target_names,
