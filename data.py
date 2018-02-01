@@ -19,13 +19,13 @@ logger = logging.getLogger(__name__)
 
 
 class DatasetBase(object):
-    def plot_clustering(self, pred_clusters, filename):
+    def plot_clustering(self, pred_clusters, filename, title):
         pxt_mat = self._get_pxt_mat(pred_clusters)
         df = pd.DataFrame(pxt_mat, columns=self.target_names)
         df.plot.bar(stacked=True)
         plt.xlabel('Cluster ID')
         plt.ylabel('Nb of documents')
-        plt.title('Clusters composition')
+        plt.title(title)
         plt.savefig(filename)
         plt.close()
 
@@ -153,10 +153,10 @@ class TwentyNewsGroups(DatasetBase):
                 line = ','.join([str(record['cluster_size'])] + record['top_terms'])
                 fwrite.write(line + '\n')
 
-    def evaluate_clusters(self, pred_clusters, exp_name):
+    def evaluate_clusters(self, pred_clusters, exp_name, title):
         filename = os.path.expanduser("~/plot/20ng_{}_clusters.png".format(
             exp_name))
-        self.plot_clustering(pred_clusters, filename)
+        self.plot_clustering(pred_clusters, filename, title)
         filename = os.path.expanduser("~/plot/20ng_{}_topics.csv".format(
             exp_name))
         self.write_topics(pred_clusters, filename)
