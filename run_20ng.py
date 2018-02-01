@@ -14,11 +14,12 @@ import data
 
 
 logger = logging.getLogger(__name__)
+np.random.seed(123456)
 
 
 def get_pred_clusters(model, samples, njobs):
     with model:
-        trace = pm.sample(samples, njobs=njobs)
+        trace = pm.sample(samples, njobs=njobs, tune=1500)
     pred_clusters = [np.argmax(np.bincount(zi)) for zi in trace['z'].T]
     return np.array(pred_clusters, int)
 
@@ -65,7 +66,8 @@ def main():
         if args.model_names is None or model_name in args.model_names:
             exp_name = "{}_{}".format(args.exp_name, model_name)
             pred_clusters = get_pred_clusters(model, args.samples, args.njobs)
-            dataset.evaluate_clusters(pred_clusters, exp_name)
+            title= r"Clusters composition, $\alpha={}$".format(args.dp_alpha)
+            dataset.evaluate_clusters(pred_clusters, exp_name, title)
 
 
 if __name__ == '__main__':
